@@ -46,7 +46,7 @@ def get_drinks():
 '''
 @app.route('/drinks-detail', methods=['GET'])
 @requires_auth('get:drinks-detail')
-def get_drinks_detail(token):
+def get_drinks_detail(payload):
     list_of_all_drinks = Drink.query.all()
     if len(list_of_all_drinks) == 0:
         abort(404)
@@ -80,7 +80,7 @@ def validate_and_return_processable_request_body(request_body):
 
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
-def create_drink(token):
+def create_drink(payload):
     body_in_json_string = request.get_data()
     body_in_dict = json.loads(body_in_json_string)
     processable_request_body = validate_and_return_processable_request_body(body_in_dict)
@@ -102,7 +102,7 @@ def create_drink(token):
 '''
 @app.route('/drinks/<int:drink_id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
-def update_drink(token, drink_id):
+def update_drink(payload, drink_id):
     requested_drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
     if requested_drink is None:
         abort(404)
@@ -131,7 +131,7 @@ def update_drink(token, drink_id):
 '''
 @app.route('/drinks/<int:drink_id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drink(token, drink_id):
+def delete_drink(payload, drink_id):
     requested_drink = Drink.query.filter_by(id=drink_id).one_or_none()
     if requested_drink is None:
         abort(404)
