@@ -95,7 +95,58 @@ def check_permissions(permission, payload):
     !!NOTE urlopen has a common certificate error described here: https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org
 '''
 def verify_decode_jwt(token):
-    raise Exception('Not Implemented')
+    jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
+    jwks = json.loads(jsonurl.read())
+    jwt_header = jwt.get_unverified_header(token)
+    if 'kid' not in jwt_header:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization malformed.'
+        }, 401)
+    rsa_key = {}
+    for each_jwk in jwks.get('keys'):
+        if each_jwk.get('kid') == jwt_header['kid']:
+            rsa_key = {
+                'kty': each_jwk.get('kty'),
+                'kid': each_jwk.get('kid'),
+                'use': each_jwk.get('use'),
+                'n': each_jwk.get('n'),
+                'e': each_jwk.get('e')
+            }
+    if rsa_key:
+        try:
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=ALGORITHMS,
+                audience=API_AUDIENCE,
+                issuer=f'https://{AUTH0_DOMAIN}/'
+            )
+            return payload
+        
+        except jwt.ExpiredSignatureError:
+            raise AuthError({
+                'code': 'token_expired',
+                'description': 'Token expired.'
+            }, 401)
+        except jwt.JWTClaimsError:
+            raise AuthError({
+                'code': 'invalid_claims',
+                'description': 'Incorrect claims. Please, check the audience and issuer.'
+            }, 401)
+        # handle any other exceptions that may arise
+        except Exception:
+            raise AuthError({
+                'code': 'invalid_header',
+                'description': 'Unable to parse authentication token.'
+            }, 400)
+    # if the rsa_key is empty, then the token's kid does not match any of the public keys in the jwks
+    raise AuthError({
+        'code': 'invalid_header',
+        'description': 'Unable to find the appropriate key.'
+    }, 400)
+            
+    #raise Exception('Not Implemented')
 
 '''
 @TODO implement @requires_auth(permission) decorator method
