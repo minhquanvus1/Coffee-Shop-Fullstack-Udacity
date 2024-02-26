@@ -71,7 +71,7 @@ def validate_and_return_processable_request_body(request_body):
     recipe = request_body['recipe']
     if recipe is None:
         abort(422)
-    if not all(key in request_body for key in ['color', 'name', 'parts']) and not isinstance(recipe['color'], str) and not isinstance(recipe['name'], str) and not isinstance(recipe['parts'], (int, float)):
+    if not isinstance(request_body['title'], str) and not all(key in recipe for key in ['color', 'name', 'parts']) and not isinstance(recipe['color'], str) and not isinstance(recipe['name'], str) and not isinstance(recipe['parts'], (int, float)):
         abort(422)
     if isinstance(recipe, dict):
         recipe = [recipe]
@@ -110,6 +110,8 @@ def update_drink(token, drink_id):
     title = request_body.get('title', None)
     recipe = request_body.get('recipe', None)
     if title is None or recipe is None:
+        abort(422)
+    if isinstance(title, str):
         abort(422)
     if isinstance(recipe, dict):
         recipe = [recipe]
