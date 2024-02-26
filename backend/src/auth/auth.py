@@ -1,5 +1,5 @@
 import json
-from flask import request, _request_ctx_stack
+from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
@@ -145,9 +145,8 @@ def verify_decode_jwt(token):
         'code': 'invalid_header',
         'description': 'Unable to find the appropriate key.'
     }, 400)
-            
-    #raise Exception('Not Implemented')
 
+            
 '''
 @TODO implement @requires_auth(permission) decorator method
     @INPUTS
@@ -163,8 +162,16 @@ def requires_auth(permission=''):
         @wraps(f)
         def wrapper(*args, **kwargs):
             token = get_token_auth_header()
-            payload = verify_decode_jwt(token)
-            check_permissions(permission, payload)
+            try:
+                payload = verify_decode_jwt(token)
+                check_permissions(permission, payload)
+            except AuthError as e:
+                print(f'Error: {e.error}')
+                print(f'Status Code: {e.status_code}')
+            except Exception as e:
+                print(f'Error: {e}')
+                abort(401)
+            
             return f(payload, *args, **kwargs)
 
         return wrapper
