@@ -69,6 +69,8 @@ def validate_and_return_processable_request_body(request_body):
     if not all(key in request_body for key in ['title', 'recipe']):
         abort(422)
     recipe = request_body['recipe']
+    if recipe is None:
+        abort(422)
     if not all(key in request_body for key in ['color', 'name', 'parts']) and not all(isinstance(key, str) in recipe for key in ['color', 'name', 'parts']):
         abort(422)
     if isinstance(recipe, dict):
