@@ -71,11 +71,11 @@ def validate_and_return_processable_request_body(request_body):
     recipe = request_body['recipe']
     if recipe is None:
         abort(422)
-    if not all(key in request_body for key in ['color', 'name', 'parts']) and not all(isinstance(key, str) in recipe for key in ['color', 'name', 'parts']):
+    if not all(key in request_body for key in ['color', 'name', 'parts']) and not isinstance(recipe['color'], str) and not isinstance(recipe['name'], str) and not isinstance(recipe['parts'], (int, float)):
         abort(422)
     if isinstance(recipe, dict):
         recipe = [recipe]
-    request_body['recipe'] = json.dumps(request_body['recipe'])
+    request_body['recipe'] = json.dumps(recipe)
     return request_body
 
 @app.route('/drinks', methods=['POST'])
@@ -100,8 +100,23 @@ def create_drink(token):
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
         or appropriate status code indicating reason for failure
 '''
-
-
+@app.route('/drinks/<int:drink_id>', methods=['PATCH'])
+@requires_auth('patch:drinks')
+def update_drink(token, drink_id):
+    requested_drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
+    if requested_drink is None:
+        abort(404)
+    request_body = request.get_json()
+    title = request_body.get('title', None)
+    recipe = request_body.get('recipe', None)
+    if title is None or recipe is None:
+        abort(422)
+    if isinstance(recipe, dict):
+        recipe = [recipe]
+    requested_drink.title = title
+    requested_drink.recipe = json.dumps(recipe)
+    requested_drink.update()
+    return jsonify({"success": True, "drinks": [requested_drink.long()]}), 200
 '''
 @TODO implement endpoint
     DELETE /drinks/<id>
