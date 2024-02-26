@@ -63,6 +63,29 @@ def get_drinks_detail(token):
         or appropriate status code indicating reason for failure
 '''
 
+def validate_and_return_processable_request_body(request_body):
+    if not isinstance(request_body, dict):
+        abort(422)
+    if not all(key in request_body for key in ['title', 'recipe']):
+        abort(422)
+    recipe = request_body['recipe']
+    if not all(key in request_body for key in ['color', 'name', 'parts']) and not all(isinstance(key, str) in recipe for key in ['color', 'name', 'parts']):
+        abort(422)
+    if isinstance(recipe, dict):
+        recipe = [recipe]
+    request_body['recipe'] = json.dumps(request_body['recipe'])
+    return request_body
+
+@app.route('/drinks', methods=['POST'])
+@requires_auth('post:drinks')
+def create_drink(token):
+    body_in_json_string = request.get_data()
+    body_in_dict = json.loads(body_in_json_string)
+    processable_request_body = validate_and_return_processable_request_body(body_in_dict)
+    
+    new_drink = Drink(**processable_request_body) # **body_in_dict is the same as title=body_in_dict['title'], recipe=body_in_dict['recipe'] - unpack the dictionary into keyword arguments
+    new_drink.insert()
+    return jsonify({"success": True, "drinks": [new_drink.long()]}), 200
 
 '''
 @TODO implement endpoint
