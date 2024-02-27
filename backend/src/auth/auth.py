@@ -5,9 +5,9 @@ from jose import jwt
 from urllib.request import urlopen
 
 
-AUTH0_DOMAIN = 'udacity-fsnd.auth0.com'
+AUTH0_DOMAIN = 'dev-tioi4bnfisc6bcli.us.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'dev'
+API_AUDIENCE = 'https://coffeeShop/api'
 
 ## AuthError Exception
 '''
@@ -97,7 +97,13 @@ def check_permissions(permission, payload):
 def verify_decode_jwt(token):
     jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
     jwks = json.loads(jsonurl.read())
-    jwt_header = jwt.get_unverified_header(token)
+    try:
+        jwt_header = jwt.get_unverified_header(token)
+    except jwt.JWTError:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Error Decoding Headers.'
+        }, 400)
     if 'kid' not in jwt_header:
         raise AuthError({
             'code': 'invalid_header',
@@ -168,8 +174,10 @@ def requires_auth(permission=''):
             except AuthError as e:
                 print(f'Error: {e.error}')
                 print(f'Status Code: {e.status_code}')
+                raise e
             except Exception as e:
                 print(f'Error: {e}')
-
+                abort(500)
+            return f(payload, *args, **kwargs)
         return wrapper
     return requires_auth_decorator
