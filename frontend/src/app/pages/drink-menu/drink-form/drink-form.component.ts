@@ -46,6 +46,9 @@ export class DrinkFormComponent implements OnInit {
   }
 
   saveClicked() {
+    // Exclude the 'id' property if it's -1
+  // const drinkToSave = this.drink.id === -1 ? 
+  // { title: this.drink.title, recipe: this.drink.recipe } : this.drink;
     this.drinkService.saveDrink(this.drink);
     this.closeModal();
   }
