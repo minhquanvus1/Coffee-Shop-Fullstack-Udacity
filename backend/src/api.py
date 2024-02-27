@@ -17,8 +17,13 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-#db_drop_and_create_all()
+db_drop_and_create_all()
 
+
+@app.route('/reset-db', methods=['POST'])
+def reset_db():
+    db_drop_and_create_all()
+    return jsonify({"success": True, "message": "database reset successfully"}), 200
 # ROUTES
 '''
 @TODO implement endpoint
@@ -63,18 +68,33 @@ def get_drinks_detail(payload):
         or appropriate status code indicating reason for failure
 '''
 
-def validate_and_return_processable_request_body(request_body):
+def validate_recipe(recipe: list):
+    
+    
+    for each_recipe in recipe:
+        if not all(key in each_recipe for key in ['color', 'name', 'parts']):
+            abort(422, description='recipe must contain "color", "name", and "parts"')
+        if not isinstance(each_recipe['color'], str) or each_recipe['color'] == '':
+            abort(422, description='color must be a non-empty string')
+        if not isinstance(each_recipe['name'], str) or each_recipe['name'] == '':
+            abort(422, description='name must be a non-empty string')
+        if not isinstance(each_recipe['parts'], (int, float)) or each_recipe['parts'] <= 0:
+            abort(422, description='parts must be a positive number')
+
+def validate_and_return_processable_request_body(request_body: dict) -> dict:
     if not isinstance(request_body, dict):
-        abort(422)
+        abort(422, description='request body must be a dictionary')
     if not all(key in request_body for key in ['title', 'recipe']):
-        abort(422)
+        abort(422, description='request body must contain "title" and "recipe"')
+    if not isinstance(request_body['title'], str) or request_body['title'] == '':
+        abort(422, description='title must be a non-empty string')
     recipe = request_body['recipe']
     if recipe is None:
-        abort(422)
-    if not isinstance(request_body['title'], str) and not all(key in recipe for key in ['color', 'name', 'parts']) and not isinstance(recipe['color'], str) and not isinstance(recipe['name'], str) and not isinstance(recipe['parts'], (int, float)):
-        abort(422)
+        abort(422, description='recipe must be provided')
+    
     if isinstance(recipe, dict):
         recipe = [recipe]
+    validate_recipe(recipe)
     request_body['recipe'] = json.dumps(recipe)
     return request_body
 
@@ -86,6 +106,9 @@ def create_drink(payload):
     processable_request_body = validate_and_return_processable_request_body(body_in_dict)
     
     new_drink = Drink(**processable_request_body) # **body_in_dict is the same as title=body_in_dict['title'], recipe=body_in_dict['recipe'] - unpack the dictionary into keyword arguments
+    list_of_drinks_with_the_same_title = list(filter(lambda drink: drink.title.lower() == new_drink.title.lower(), Drink.query.all()))
+    if len(list_of_drinks_with_the_same_title) > 0:
+        abort(422, description='title must be unique')
     new_drink.insert()
     return jsonify({"success": True, "drinks": [new_drink.long()]}), 200
 
@@ -106,17 +129,31 @@ def update_drink(payload, drink_id):
     requested_drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
     if requested_drink is None:
         abort(404)
-    request_body = request.get_json()
-    title = request_body.get('title', None)
-    recipe = request_body.get('recipe', None)
-    if title is None or recipe is None:
-        abort(422)
-    if isinstance(title, str):
-        abort(422)
-    if isinstance(recipe, dict):
-        recipe = [recipe]
-    requested_drink.title = title
-    requested_drink.recipe = json.dumps(recipe)
+    try:
+        request_body = request.get_json()
+        print(request_body)
+    except:
+        abort(400, description='request body must be in JSON format')
+    
+    if 'title' in request_body:
+        title = request_body.get('title', None)
+        if title is None or not isinstance(title, str) or title == '':
+            abort(422, description='title must be a non-empty string, and must be provided')
+        # if title.lower() == requested_drink.title.lower():
+        #     abort(422, description='title must be different from the current title')
+        list_of_existing_titles = [drink.title.lower() for drink in Drink.query.filter(Drink.id != requested_drink.id).all()]
+        if title.lower() in list_of_existing_titles:
+            abort(422, description='title must be unique')
+        requested_drink.title = title
+        
+    if 'recipe' in request_body:
+        recipe = request_body['recipe']
+        if recipe is None:
+            abort(422, description='recipe must be provided')
+        if isinstance(recipe, dict):
+            recipe: list = [recipe]
+        validate_recipe(recipe)
+        requested_drink.recipe = json.dumps(recipe)
     requested_drink.update()
     return jsonify({"success": True, "drinks": [requested_drink.long()]}), 200
 '''
@@ -149,7 +186,7 @@ def unprocessable(error):
     return jsonify({
         "success": False,
         "error": 422,
-        "message": "unprocessable"
+        "message": error.description
     }), 422
 
 
@@ -176,13 +213,22 @@ def not_found(error):
         "message": "resource not found"
     }), 404
 
-@app.errorhandler(401)
-def not_found(error):
+@app.errorhandler(500)
+def internal_server_error(error):
     return jsonify({
         "success": False,
-        "error": 401,
-        "message": "Unauthorized"
-    }), 401
+        "error": 500,
+        "message": "internal server error"
+    }), 500
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({
+        "success": False,
+        "error": 400,
+        "message": error.description
+    }), 400
+
 
 '''
 @TODO implement error handler for AuthError
@@ -190,6 +236,7 @@ def not_found(error):
 '''
 @app.errorhandler(AuthError)
 def auth_error(error):
+    print('from autherror')
     return jsonify({
         "success": False,
         "error": error.status_code,
