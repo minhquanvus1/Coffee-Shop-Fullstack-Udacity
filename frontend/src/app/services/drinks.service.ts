@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import { environment } from 'src/environments/environment';
 
 export interface Drink {
-  id: number;
+  id?: number;
   title: string;
   recipe: Array<{
           name: string,
@@ -116,7 +116,8 @@ export class DrinksService {
         }
       });
     } else { // insert
-      this.http.post(this.url + '/drinks', drink, this.getHeaders())
+      const drinkToSave = {title: drink.title, recipe: drink.recipe};
+      this.http.post(this.url + '/drinks', drinkToSave, this.getHeaders())
       .subscribe( (res: any) => {
         if (res.success) {
           this.drinksToItems(res.drinks);
