@@ -81,3 +81,5 @@ sqlite3 database.db
 
 - For API Test with Postman, you can import the `Redis-coffee-shop-udacity-fsnd-udaspicelatte.postman_collection.json` file in the root directory of the backend folder to test the API.
 - I have also included the result of the API test in the `Redis-coffee-shop-udacity-fsnd-udaspicelatte.postman_test_run.json` file in the root directory of the backend folder.
+
+- This is the GitHub repository for the entire project: [Coffee Shop Full Stack](https://github.com/minhquanvus1/Coffee-Shop-Fullstack-Udacity/tree/main)

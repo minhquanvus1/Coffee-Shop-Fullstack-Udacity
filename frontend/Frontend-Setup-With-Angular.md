@@ -24,3 +24,5 @@
   ```
 - Notice that: if you install Ionic CLI globally, you can run `ionic serve` directly. Otherwise, you need to run `npx ionic serve`.
 - The frontend app will be running on `http://localhost:8100/`.
+
+- This is the GitHub repository for the entire project: [Coffee Shop Full Stack](https://github.com/minhquanvus1/Coffee-Shop-Fullstack-Udacity/tree/main)
