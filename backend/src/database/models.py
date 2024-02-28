@@ -64,8 +64,13 @@ class Drink(db.Model):
     '''
 
     def short(self):
-        print(json.loads(self.recipe))
-        short_recipe = [{'color': r['color'], 'parts': r['parts']} for r in json.loads(self.recipe)]
+        
+        if isinstance(self.recipe, list):
+            recipe_data = self.recipe
+        else:
+            recipe_data = json.loads(self.recipe)
+            print(json.loads(self.recipe))
+        short_recipe = [{'color': r['color'], 'parts': r['parts']} for r in recipe_data]
         return {
             'id': self.id,
             'title': self.title,
@@ -78,10 +83,14 @@ class Drink(db.Model):
     '''
 
     def long(self):
+        if isinstance(self.recipe, list):
+            recipe_data = self.recipe
+        else:
+            recipe_data = json.loads(self.recipe)
         return {
             'id': self.id,
             'title': self.title,
-            'recipe': json.loads(self.recipe)
+            'recipe': recipe_data
         }
 
     '''
