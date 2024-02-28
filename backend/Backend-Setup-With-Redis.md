@@ -68,3 +68,16 @@ redis-cli
 
 - For Role-Based Access Control (RBAC), I create 2 users, Barista, and Manager, respectively. The Barista user can only perform `get:drinks` and `get:drinks-detail` actions, while the Manager user can perform all actions.
 - when we register the new user, they will have NO role. We need to assign the role to the user manually in the Auth0 dashboard.
+
+- To view data in the SQLite database, you can use the SQLite browser to open the `database.db` file in the `backend/src` directory.
+- Or, you can use the following command to view the data in the SQLite database:
+
+```bash
+cd backend/src/database
+sqlite3 database.db
+```
+
+- Notice that I use the same database for both the development and testing environment. Therefore, when you run the test, the data in the database will be changed. Therefore, I have added the `POST /reset_db` endpoint in the `Redis-coffee-shop-udacity-fsnd-udaspicelatte.postman_collection.json` Postman collection to reset the database, and clear the Redis cache after the Collection's Test to ensure the test is independent of each other.
+
+- For API Test with Postman, you can import the `Redis-coffee-shop-udacity-fsnd-udaspicelatte.postman_collection.json` file in the root directory of the backend folder to test the API.
+- I have also included the result of the API test in the `Redis-coffee-shop-udacity-fsnd-udaspicelatte.postman_test_run.json` file in the root directory of the backend folder.
